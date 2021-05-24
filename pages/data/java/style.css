@@ -1,0 +1,15 @@
+
+html, body {
+    background-color: #FFFFFF;
+    text-align: center;
+    vertical-align: middle;
+}
+
+img {
+    position: absolute;
+    width: 30%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+sub {}
