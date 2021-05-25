@@ -32,12 +32,17 @@ def load_page(ffx, pageID):
     return conf
 
 async def reload_daemon(ffx, time):
+    print(f"relead_daemon started: {time}")
     while time > 0:
         try:
             await asyncio.sleep(time)
             ffx.refresh()
+            print("did refresh...")
         except asyncio.CancelledError:
             pass
+
+async def getInput():
+    return input
 
 async def main():
     ffx = firefox()
@@ -45,11 +50,16 @@ async def main():
     time.sleep(1)
 
     curr_conf = load_page(ffx, DEFAULT_PAGE)
+    print(f"loaded page, {curr_conf}")
     reload_task = asyncio.create_task(reload_daemon(ffx, curr_conf['refresh']))
+#    print(f"{current_conf['refresh']}")
+    print(f"started daemon, {reload_task}")
     
     while True:
-        pageID = input()
-        new_conf = load_page(ffx, pageID)
+        print("tick")
+        await asyncio.sleep(3);
+        new_conf = None
+        #new_conf = load_page(ffx, pageID)
         if new_conf is not None:
             reload_task.cancel()
             curr_conf = new_conf
