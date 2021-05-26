@@ -1,8 +1,12 @@
 import os, yaml, time, asyncio
 
-DEFAULT_PAGE = "lasers"
+from sanic import Sanic
+
+DEFAULT_PAGE = "35mm"
 PATH = os.path.dirname(os.path.abspath(__file__)) + '/'
 BASE_URL = 'file://' + PATH + 'pages/data/'
+
+app = Sanic("CoffeeTableApp")
 
 def firefox():
     print("Starting Selenium...")
