@@ -1,0 +1,64 @@
+
+html, body {
+    background-color: #FFFFFF;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0px;
+    margin: 0px;
+    width:100%;
+    height:100%;
+}
+
+canvas {
+    background-color: #000000;
+    position:absolute;
+    top:0px;
+    left:0px;
+    width: 100%;
+    height:100%;
+}
+.yimg {
+    height: 100%;
+}
+
+sub {}
+
+.crisp {
+    image-rendering: crisp-edges;
+}
+
+.fill {
+    height:100%;
+    margin:auto;
+}
+
+.container {
+    display: flex;
+    justify-content: space-around;
+}
+
+.topbutton {
+    margin: 10px;
+}
+
+.foot {
+    background-color:#811111;
+    position:absolute;
+    right:0px;
+    bottom:0px;
+    width:100%;
+    height:40px;
+
+}
+.head {
+    background-color:#222222;
+    position:absolute;
+    left:0px;
+    top:0px;
+    width:100%;
+    height:60px;
+
+    border-color:#FFFFFF;
+    border-bottom-style:solid;
+    border-bottom-width:2px;
+}

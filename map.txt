@@ -1,0 +1,36 @@
+
+
+SERVER
+(ws) webclient ws -> SERVER (package & forward) -> PAGE.js ws
+(ws) PAGE.js ws -> SERVER (unpack & forward) -> webclient ws
+
+(http) webclient ws -> SERVER >> RUNNER
+
+
+FFX
+
+
+RUNNER
+SERVER >> RUNNER >> FFX
+SERVER >> RUNNER >> PAGE.py
+RUNNER >> FFX
+RUNNER > PAGE.py
+
+(PY) PAGE
+ >> FFX
+ SERVER >> RUNNER >> FFX
+
+(JS) PAGE
+(ws) SERVER/webclient ->
+(ws) -> SERVER/WEBCLIENT
+
+
+{
+    type: <user_register, user_deregister, *>
+        host->client: switch_view, lock_input, unlock_input, set_mode
+        client->host: 
+        server->client: page_list
+    source: <server, host, uid>
+    destination: <server, host, uid>
+    payload: #
+}

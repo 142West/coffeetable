@@ -1,12 +1,10 @@
 import os, yaml, time, asyncio
 
-from sanic import Sanic
+import server
 
-DEFAULT_PAGE = "35mm"
+DEFAULT_PAGE = "lasers"
 PATH = os.path.dirname(os.path.abspath(__file__)) + '/'
 BASE_URL = 'file://' + PATH + 'pages/data/'
-
-app = Sanic("CoffeeTableApp")
 
 def firefox():
     print("Starting Selenium...")
@@ -23,17 +21,20 @@ def load_conf(yamlstream):
     default_conf.update(yaml.safe_load(yamlstream))
     return default_conf
 
+def find_pages():
+    pages = {}
+    yaml_files = os.listdir(PATH + "pages")
+    for filename in yaml_files:
+        if ".yaml" in filename:
+            with open(PATH + "pages/" + filename, "r") as f:
+                config = yaml.safe_load(f)
+            if "name" in config.keys():
+                pages[config['name']] = filename
+            else:
+                pages[filename[:-5]] = filename
+    return pages
 
-def load_page(ffx, pageID):
-    try:
-        with open(PATH + 'pages/' + pageID + '.yaml', 'r') as f:
-            conf = load_conf(f)
-    except:
-        print(f'ERROR: could not load page {pageID}')
-        return None
 
-    ffx.get(f'{BASE_URL}{conf["dir"]}/{conf["index"]}')
-    return conf
 
 async def reload_daemon(ffx, time):
     print(f"relead_daemon started: {time}")
@@ -45,31 +46,32 @@ async def reload_daemon(ffx, time):
         except asyncio.CancelledError:
             pass
 
-async def getInput():
-    return input
+class TableRunner:
+    def __init__(self):
+        self.ffx = firefox()
+        self.reloader = None
+        self.conf = None
+        self.pages = find_pages()
 
-async def main():
-    ffx = firefox()
-    ffx.fullscreen_window()
-    time.sleep(1)
-
-    curr_conf = load_page(ffx, DEFAULT_PAGE)
-    print(f"loaded page, {curr_conf}")
-    reload_task = asyncio.create_task(reload_daemon(ffx, curr_conf['refresh']))
-#    print(f"{current_conf['refresh']}")
-    print(f"started daemon, {reload_task}")
+        self.ffx.fullscreen_window()
+        time.sleep(1)
+        self.load_page(DEFAULT_PAGE)
     
-    while True:
-        print("tick")
-        await asyncio.sleep(3);
-        new_conf = None
-        #new_conf = load_page(ffx, pageID)
-        if new_conf is not None:
-            reload_task.cancel()
-            curr_conf = new_conf
-            reload_task = asyncio.create_task(reload_daemon(ffx, curr_conf['refresh']))
+    def load_page(self, pageID):
+        if self.reloader is not None:
+            self.reloader.cancel()
 
-    
+        try:
+            with open(PATH + 'pages/' + pageID + '.yaml', 'r') as f:
+                self.conf = load_conf(f)
+        except:
+            print(f'ERROR: could not load page {pageID}')
+            return None
+
+        self.ffx.get(f'{BASE_URL}{self.conf["dir"]}/{self.conf["index"]}')
+        self.reloader = asyncio.create_task(reload_daemon(self.ffx, self.conf['refresh']))
+        return self.conf
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    server.init()
