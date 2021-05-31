@@ -29,9 +29,9 @@ def find_pages():
             with open(PATH + "pages/" + filename, "r") as f:
                 config = yaml.safe_load(f)
             if "name" in config.keys():
-                pages[config['name']] = filename
+                pages[config['name']] = filename[:-5]
             else:
-                pages[filename[:-5]] = filename
+                pages[filename[:-5]] = filename[:-5]
     return pages
 
 

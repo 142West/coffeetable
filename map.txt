@@ -30,6 +30,7 @@ RUNNER > PAGE.py
         host->client: switch_view, lock_input, unlock_input, set_mode
         client->host: 
         server->client: page_list
+        client->server: load_page
     source: <server, host, uid>
     destination: <server, host, uid>
     payload: #

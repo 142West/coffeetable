@@ -1,4 +1,10 @@
 
+
+@font-face {
+    font-family: orbitron;
+    src: url(font/orbitron-black.ttf) format("truetype")
+}
+
 html, body {
     background-color: #FFFFFF;
     text-align: center;
@@ -25,6 +31,7 @@ sub {}
 
 .crisp {
     image-rendering: crisp-edges;
+    image-rendering: pixelated;
 }
 
 .fill {
@@ -41,6 +48,18 @@ sub {}
     margin: 10px;
 }
 
+.select_text {
+    position: absolute;
+    left:400px;
+    top:400px;
+    width:300px;
+    transform:translate(-50%,-50%);
+    color:#3535DD;
+    font-family: 'Orbitron', sans-serif;
+    font-size:30px;
+    z-index: 0;
+}
+
 .foot {
     background-color:#811111;
     position:absolute;
@@ -48,6 +67,7 @@ sub {}
     bottom:0px;
     width:100%;
     height:40px;
+    z-index: 10;
 
 }
 .head {
@@ -56,9 +76,10 @@ sub {}
     left:0px;
     top:0px;
     width:100%;
-    height:60px;
+    height:50px;
 
     border-color:#FFFFFF;
     border-bottom-style:solid;
     border-bottom-width:2px;
+    z-index: 10;
 }

@@ -99,7 +99,9 @@ async def serve_connect(request, socket):
                 send_json(host_socket, packet)
 
             elif packet["destination"] == "server":
-                pass # TODO HANDLE REQUESTS TO SERVER
+                if packet["type"] == "load_page":
+                    app.config.TABLE.load_page(packet["payload"])
+                # TODO HANDLE REQUESTS TO SERVER
 
     finally:
         print(f"User {uid} disconnected.")
