@@ -13,6 +13,9 @@ html, body {
     margin: 0px;
     width:100%;
     height:100%;
+    
+
+    overscroll-behavior: none;
 }
 
 canvas {
@@ -58,6 +61,7 @@ sub {}
     font-family: 'Orbitron', sans-serif;
     font-size:30px;
     z-index: 0;
+    user-select: none;
 }
 
 .foot {

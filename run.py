@@ -44,7 +44,7 @@ async def reload_daemon(ffx, time):
             ffx.refresh()
             print("did refresh...")
         except asyncio.CancelledError:
-            pass
+            return
 
 class TableRunner:
     def __init__(self):

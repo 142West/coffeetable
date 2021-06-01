@@ -20,6 +20,8 @@ let render = {};
 
 let input = {};
 
+document.onselectstart = function() {return false;};
+
 load();
 
 /*----------- LOADING -----------*/
@@ -193,9 +195,10 @@ function renderSelect() {
     ctx.textAlign = "center";
     ctx.font = "32px Arial";
     ctx.fillStyle = "#BFBFFF";
-    const offset = 45;
-    const frict = 0.8;
+    const offset = 45; // dist between lines of text
+    const frict = 0.8; // scale velocity each step
     
+    // clear 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(render.sel.left, canvas.width/2 + 150 - 10, canvas.height/2 - 20, 20, 36);
     ctx.drawImage(render.sel.right, canvas.width/2 - 150 - 10, canvas.height/2 - 20, 20, 36);
@@ -208,27 +211,32 @@ function renderSelect() {
         render.sel.y = -1 * offset * render.sel.names.length + offset; 
     }
 
+    // place all the texts
     for (let i = 0; i < render.sel.names.length; i++) {
-        let d = render.sel.texts[i];
-        let y = canvas.height / 2 + offset * i + render.sel.y;
+        let d = render.sel.texts[i]; // get the div
+        let y = canvas.height / 2 + offset * i + render.sel.y; // calc position
         if (y <= canvas.height / 2 + offset / 2 && y > canvas.height / 2 - offset / 2) {
+            // this div is centered, highlight as selection
             d.style.color = "#6e6eff";
             render.sel.selected = render.sel.names[i];
         } else {
+            // otherwise set to background color.  #TODO fade?
             d.style.color = "#3535DD";
         }
+        // move it
         setPos(d, canvas.width/2, Math.min(y, canvas.height - 20));
     }   
+    // retain velocity after user stops interacting
     if (!input.mouse && !input.touchi && render.sel.v > 0) {
         render.sel.y += render.sel.v;
         render.sel.v *= frict;
         console.log("v...");
     }
-    if (render.sel.v < 0.0001) {
+    if (render.sel.v < 0.0001) { // floats are floaty
         render.sel.v = 0;
     }
     
-    if (VIEW == "select") {
+    if (VIEW == "select") { // render the next frame unless the view has changed
         requestAnimationFrame(renderSelect);
     }
 }
