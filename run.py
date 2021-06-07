@@ -52,6 +52,7 @@ class TableRunner:
         self.reloader = None
         self.conf = None
         self.pages = find_pages()
+        self.current_page = None;
 
         self.ffx.fullscreen_window()
         time.sleep(1)
@@ -70,6 +71,7 @@ class TableRunner:
 
         self.ffx.get(f'{BASE_URL}{self.conf["dir"]}/{self.conf["index"]}')
         self.reloader = asyncio.create_task(reload_daemon(self.ffx, self.conf['refresh']))
+        self.current_page = pageID;
         return self.conf
 
 

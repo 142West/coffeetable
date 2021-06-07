@@ -28,7 +28,7 @@ RUNNER > PAGE.py
 {
     type: <user_register, user_deregister, *>
         host->client: switch_view, lock_input, unlock_input, set_mode
-        client->host: 
+        client->host: input, input_start, input_end
         server->client: page_list
         client->server: load_page
     source: <server, host, uid>

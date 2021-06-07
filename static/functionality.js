@@ -13,6 +13,7 @@ let VIEW = "select"; // of SELECT, DIRECTION, PROPORTION, TEXT
 let LOCKED = false;
 
 let PAGE_LIST = {};
+let SELECTED_PAGE = "";
 
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
@@ -87,6 +88,11 @@ function socketMessage(message) {
             changeView("select")
             console.log(m.payload);
             break;
+        case "page_select":
+            console.log("recieved page select");
+            SELECTED_PAGE = m.payload;
+            console.log(SELECTED_PAGE);
+            break;
     }
 }
 
@@ -94,12 +100,14 @@ function socketClose() {
     console.log("websocket closed...");
     SOCKET = undefined;
     recolor(DEFAULT_COLOR);
+    connect();
 }
 
 function sendPacket(typ, src, dst, payload) {
-    if(SOCKET != undefined) {
+    if(SOCKET != undefined && SOCKET.readyState == 1) {
         SOCKET.send(JSON.stringify({"type": typ, "source": src, 
             "destination": dst, "payload": payload}));
+        console.log("sent packet....");
     }
 }
 
@@ -126,14 +134,21 @@ function compToColor(comp) {
         ("00" + comp.B.toString(16)).substr(-2);
 }
 
+function scaleColor(color, scale) {
+    let comp = colorToComp(color);
+    comp.R = Math.floor(comp.R * scale);
+    comp.G = Math.floor(comp.G * scale);
+    comp.B = Math.floor(comp.B * scale);
+    comp.R = Math.min(Math.max(comp.R, 0), 255);
+    comp.G = Math.min(Math.max(comp.G, 0), 255);
+    comp.B = Math.min(Math.max(comp.B, 0), 255);
+    return compToColor(comp);
+}
+
 function themeColors(color) {
     let colors = [];
     for (let shade of SHADES) {
-        let comp = colorToComp(color);
-        comp.R = Math.floor(comp.R * shade);
-        comp.G = Math.floor(comp.G * shade);
-        comp.B = Math.floor(comp.B * shade);
-        colors.push(compToColor(comp));
+        colors.push(scaleColor(color, shade));
     }
     return colors;
 }
@@ -149,6 +164,20 @@ function setupRendering() {
     render.sel.left.src = "img/arrow-left.png";
     render.sel.right = new Image();
     render.sel.right.src = "img/arrow-right.png";
+
+    render.dir = {};
+    render.dir.up = new Image();
+    render.dir.up.src = "img/drag-up.png";
+    render.dir.down = new Image();
+    render.dir.down.src = "img/drag-down.png";
+    render.dir.left = new Image();
+    render.dir.left.src = "img/drag-left.png";
+    render.dir.right = new Image();
+    render.dir.right.src = "img/drag-right.png";
+    render.dir.bg = new Image();
+    render.dir.bg.src = "img/direction-bg.png";
+
+    render.txt = {};
 }
 
 function scaleCanvas() {
@@ -159,11 +188,23 @@ function scaleCanvas() {
 }
 
 function renderView(view) {
-
+    renderClear();
     switch (view) {
         case "select":
             setupSelect();
             requestAnimationFrame(renderSelect);
+            break;
+        case "direction":
+            setupDirection();
+            requestAnimationFrame(renderDirection);
+            break;
+        case "proportion":
+            setupProportion();
+            requestAnimationFrame(renderProportion);
+            break;
+        case "text":
+            setupText();
+            requestAnimationFrame(renderText);
             break;
     }
 }
@@ -181,12 +222,14 @@ function setupSelect() {
     render.sel.y = 0;
     render.sel.v = 0;
     render.sel.names = [];
+    render.sel.values = [];
     render.sel.trimmed_names = [];
     render.sel.texts = []
     const max_len = 32;
 
     for (const [key, value] of Object.entries(PAGE_LIST)) {
         render.sel.names.push(key);
+        render.sel.values.push(value);
         render.sel.trimmed_names.push(key.substr(0, max_len));
         render.sel.texts.push(makeDiv("select_text", key.substr(0, max_len)));
     }
@@ -204,54 +247,151 @@ function renderSelect() {
     ctx.drawImage(render.sel.right, canvas.width/2 - 150 - 10, canvas.height/2 - 20, 20, 36);
 
     // clamp values (no overscroll)
-    if (render.sel.y > 0) {
-        render.sel.y = 0;
+    if (render.sel.y > 10) {
+        render.sel.y = 10;
     }
-    if (render.sel.y < -1 * offset * render.sel.names.length + offset){
-        render.sel.y = -1 * offset * render.sel.names.length + offset; 
+    if (render.sel.y < -1 * offset * render.sel.names.length + offset - 10){
+        render.sel.y = -1 * offset * render.sel.names.length + offset - 10; 
     }
 
     // place all the texts
     for (let i = 0; i < render.sel.names.length; i++) {
         let d = render.sel.texts[i]; // get the div
         let y = canvas.height / 2 + offset * i + render.sel.y; // calc position
+        let col = "#3535DD";
+        if (render.sel.values[i] == SELECTED_PAGE) {
+            col = "#6e6eff";
+        }
         if (y <= canvas.height / 2 + offset / 2 && y > canvas.height / 2 - offset / 2) {
             // this div is centered, highlight as selection
-            d.style.color = "#6e6eff";
+            col = scaleColor(col, 1.2);
             render.sel.selected = render.sel.names[i];
-        } else {
-            // otherwise set to background color.  #TODO fade?
-            d.style.color = "#3535DD";
         }
+        col = scaleColor(col, 1 - (Math.abs(y - canvas.height / 2) / (canvas.height / 2)));
         // move it
         setPos(d, canvas.width/2, Math.min(y, canvas.height - 20));
-    }   
+        d.style.color = col;
+    }
+
+    const alignment = (((-1 * render.sel.y) + 22) % 45) - 22;
+    if (alignment > 0.5 && !input.mouse && !input.touch){
+        render.sel.v += 0.2 * Math.min(Math.sqrt(Math.abs(alignment)), 5);
+    }
+    if (alignment < -0.5 && ! input.mouse && !input.touch){
+        render.sel.v -= 0.2 * Math.min(Math.sqrt(Math.abs(alignment)), 5);
+    }
     // retain velocity after user stops interacting
-    if (!input.mouse && !input.touchi && render.sel.v > 0) {
+    if (!input.mouse && !input.touch && Math.abs(render.sel.v) > 0) {
         render.sel.y += render.sel.v;
         render.sel.v *= frict;
-        console.log("v...");
     }
-    if (render.sel.v < 0.0001) { // floats are floaty
+    if (Math.abs(render.sel.v) < 0.0001) { // floats are floaty
         render.sel.v = 0;
     }
-    
-    if (VIEW == "select") { // render the next frame unless the view has changed
+
+    // render the next frame unless the view has changed
+    if (VIEW == "select") {        
         requestAnimationFrame(renderSelect);
     }
 }
 
 // DIRECTION PAGE
-function renderDirection() {
 
+function setupDirection() {
+    
+}
+function renderDirection() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const bg_scale = 4;
+    ctx.globalAlpha = 0.3;
+    ctx.drawImage(render.dir.bg, canvas.width/2 - 36 * bg_scale, canvas.height/2 - 8 * bg_scale, 72 * bg_scale, 16 * bg_scale);
+    ctx.globalAlpha = 1;
+    for(const [k, v] of Object.entries(input.touches)) {
+        const scale = 6;
+        const x = v.start.x - 7 * scale;
+        const y = v.start.y - 7 * scale;
+        if ( v.state == "" && Date.now() - v.ts > 300) {
+            ctx.drawImage(render.dir.up, x, y - 11 * scale, 14 * scale, 13 * scale);
+            ctx.drawImage(render.dir.down, x, y + 13 * scale, 14 * scale, 13 * scale);
+            ctx.drawImage(render.dir.left, x - 11 * scale, y, 12 * scale, 15 * scale);
+            ctx.drawImage(render.dir.right, x + 12 * scale, y, 12 * scale, 15 * scale);
+
+            // render all small arrows
+        }
+        if ( v.state != "") {
+            switch (v.state) {
+                case "up"://14x13
+                    ctx.drawImage(render.dir.up, x, y - 11 * scale, 14 * scale, 13 * scale);
+                    break;
+                case "down"://14x13
+                    ctx.drawImage(render.dir.down, x, y + 13 * scale, 14 * scale, 13 * scale);
+                    break;
+                case "left"://12x15
+                    ctx.drawImage(render.dir.left, x - 11 * scale, y, 12 * scale, 15 * scale);
+                    break;
+                case "right":
+                    ctx.drawImage(render.dir.right, x + 12 * scale, y, 12 * scale, 15 * scale);
+                    break;
+            }
+        }
+    }
+    if (VIEW == "direction") {
+        requestAnimationFrame(renderDirection)
+    }
 }
 
+// JOYSTICK PAGE
+function setupProportion() {
+
+}
 function renderProportion() {
 
 }
+//TODO
+//joystick
+//keyboard inputs (dir, joy, txt)
+//use instructions
+//show when disconnected?
 
+//TEXT PAGE
+function setupText() {
+    render.txt.input = makeInput("text_input");
+    render.txt.input.id = "text-input";
+    render.txt.input.addEventListener("keyup", e => {
+        if (e.key === "Enter") {
+            submitText();
+        }
+    });
+    render.txt.btn = makeImg("text_btn", "img/text-btn.png");
+    render.txt.input.id = "text-btn";
+    render.txt.btn.style.backgroundColor = COLOR;
+    render.txt.btn.classList.add("crisp");
+    render.txt.btn.onclick = submitText;
+    setPos(render.txt.input, canvas.width/2, canvas.height/4 + 20);
+    setPos(render.txt.btn, canvas.width/2, canvas.height/2 + 20);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
 function renderText() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setPos(render.txt.input, canvas.width/2, canvas.height/4 + 20);
+    setPos(render.txt.btn, canvas.width/2, canvas.height/2 + 20);
 
+    if (VIEW == "text") {
+        requestAnimationFrame(renderText);
+    }
+}
+function submitText() {
+    let text = render.txt.input.value;
+    if (text != "") {
+        sendPacket("input", COLOR, "host", {type: "text", content: text});
+        render.txt.input.value = "";
+    }
+    render.txt.btn.style.opacity = "0.5";
+    setTimeout(resetTextButton, 400);
+}
+function resetTextButton() {
+    let btn = document.getElementById("text-btn");
+    render.txt.btn.style.opacity = "1";
 }
 
 /*------------ DOM ------------*/
@@ -260,7 +400,34 @@ function makeDiv(clazz, text) {
     let obj = document.createElement("div");
     obj.innerText = text;
     obj.className = clazz;
+    document.getElementById("screen-box").appendChild(obj);
+    render.DOM.push(obj);
+    return obj;
+}
+
+function makeInput(clazz) {
+    let obj = document.createElement("input");
+    obj.className = clazz;
     document.body.appendChild(obj);
+    render.DOM.push(obj);
+    return obj;
+}
+
+function makeImg(clazz, src) {
+    let obj = document.createElement("img");
+    obj.className = clazz;
+    obj.src = src;
+    document.body.appendChild(obj);
+    render.DOM.push(obj);
+    return obj;
+}
+
+function makeButton(clazz, text, callback) {
+    let obj = document.createElement("button");
+    obj.innerText = text;
+    obj.className = clazz;
+    obj.onclick = callback;
+    document.getElementById("screen-box").appendChild(obj);
     render.DOM.push(obj);
     return obj;
 }
@@ -276,31 +443,86 @@ function translation(loc, delta, dt) {
     switch (VIEW) {
         case "select":
             render.sel.y += delta.y;
-            render.sel.v = delta.y;
+            render.sel.v = delta.y / dt;
+            break;
+    }
+}
+
+function touchChanged(id) {
+    let touch = input.touches[id];
+    let state = touch.state;
+    const threshold = 20;
+    switch (VIEW) {
+        case "direction":
+            if (Math.abs(touch.d.x) > Math.abs(touch.d.y)) { 
+                if (touch.d.x > threshold) {
+                    touch.state = "right";
+                }
+                if (touch.d.x < -1 * threshold) {
+                    touch.state = "left";
+                }
+            } else {
+                if (touch.d.y > threshold) {
+                    touch.state = "down";
+                }
+                if (touch.d.y < -1 * threshold) {
+                    touch.state = "up";
+                }
+            }
+            if (Math.abs(touch.d.x) < threshold && Math.abs(touch.d.y) < threshold) {
+                touch.state = "";
+            }
+            if (touch.state != state) {
+                if (state != "") {
+                    sendPacket("input_end", COLOR, "host", state);
+                }
+                if (touch.state != "") {
+                    sendPacket("input_start", COLOR, "host", touch.state);
+                }
+            }
+            break;
+    }
+}
+
+function touchEnded(id){
+    let touch = input.touches[id];
+    let state = touch.state;
+    const threshold = 20;
+    switch (VIEW) {
+        case "direction":
+            if (state != "") {
+                sendPacket("input_end", COLOR, "host", state);
+            }
             break;
     }
 }
 
 function tap(loc) {
+    console.log("TAP!");
     switch (VIEW) {
         case "select":
             sendPacket("load_page", COLOR, "server", PAGE_LIST[render.sel.selected]);
-            console.log(render.sel.selected);
+            break;
+        case "direction":
+            sendPacket("input", COLOR, "host", {type:"tap"});
+            console.log("sent tap packet...");
             break;
     }
 }
 
 function addEventListeners() {
-    const body = document.body;
+    const body = document.getElementById("screen-box");
     const tapThreshold = 250; // ms
+    const dragThreshold = 20;
     input.mouse = false;
     input.touch = false;
+    input.touches = {};
     
     /*------  MOUSE CONTROLS ---------*/
     body.addEventListener('mousemove', e => {
         let loc = {x: e.clientX, y: e.clientY};
         if (e.buttons != 0) {
-            translation(loc, {x: loc.x - input.lastMouse.x, y: loc.y - input.lastMouse.y}, 5);
+            translation(loc, {x: loc.x - input.lastMouse.x, y: loc.y - input.lastMouse.y}, 1);
         }
         input.lastMouse = loc;
         //record delta
@@ -318,27 +540,108 @@ function addEventListeners() {
         input.mouseTS = Date.now();
         input.mouse = true;
     });
+
     /*-------- TOUCH CONTROLS --------*/
     body.addEventListener('touchmove', e => {
-        let t = e.touches[0]
-        let loc = {x: t.clientX, y: t.clientY};
-        translation(loc, {x: loc.x - input.lastTouch.x, y: loc.y - input.lastTouch.y}, 5);
-        input.lastTouch = loc;
+        let changed = updateTouches(e.touches);
+        for (let touch of changed) {
+            translation(touch.l, touch.dt, 1);
+            touchChanged(touch.id);
+        }
+        e.preventDefault();
         //figure out which touch and where, record delta
-    });
+    }, { passive: false});
+
     body.addEventListener('touchstart', e => {
+        updateTouches(e.touches);
         //add new touch to list, record t
         let t = e.touches[0]
-        input.lastTouch = {x: t.clientX, y: t.clientY};
         input.touch = true;
+        e.preventDefault();
     });
     body.addEventListener('touchend', e => {
         //figure out which touch ended, find movement and dt to detect tap
-        input.touch = false;
+        for (touch of e.changedTouches) {
+            let t = input.touches[touch.identifier];
+            if (Date.now() - t.ts < tapThreshold &&
+                t.d.c < dragThreshold) {
+                tap(t.loc);
+            }
+            delete input.touches[touch.identifier];
+        }
+        input.touch = input.touches.length > 0;
+    });
+
+    document.onkeydown = e => {
+        let loc = { x: canvas.width / 2 , y : canvas.height / 2 };
+        const strength = 45;
+        switch(e.keyCode) {
+            case 37: //left
+                translation(loc, {x: -1 * strength, y: 0}, 25);
+                break;
+            case 38: //up
+                translation(loc, {x: 0, y: -1 * strength}, 25);
+                break;
+            case 39: //right
+                translation(loc, {x: strength, y: 0}, 25);
+                break;
+            case 40://down
+                translation(loc, {x: 0, y: strength}, 25);
+                break;
+            case 13://enter
+            case 32://space
+                tap(loc);
+                break;
+        }
+    }
+
+    document.getElementById("btn-select").addEventListener("click", e => {
+        changeView("select");
+    });
+    document.getElementById("btn-direction").addEventListener("click", e => {
+        changeView("direction");
+    });
+    document.getElementById("btn-joystick").addEventListener("click", e => {
+        changeView("proportion");
+    });
+    document.getElementById("btn-text").addEventListener("click", e => {
+        changeView("text");
     });
 
     window.addEventListener("resize", scaleCanvas);
+    window.addEventListener("orientationchange", scaleCanvas);
+    
+    // 37< 38^ 39> 40v 13E 32[ ]
 }
 
+function updateTouches(newTouches) {
+    changed = [];
+    for (let touch of newTouches) {
+        let t = input.touches[touch.identifier];
+        if (t != undefined) {
+            if(t.loc.x != touch.clientX || t.loc.y != touch.clientY) {
+                t.dt = {x: touch.clientX - t.loc.x, y: touch.clientY - t.loc.y};
+                t.loc = {x: touch.clientX, y: touch.clientY};
+                t.d = {x: t.loc.x - t.start.x, y: t.loc.y - t.start.y};
+                t.d.c = Math.sqrt(t.d.x * t.d.x + t.d.y * t.d.y);
+                changed.push({l: t.loc, dt: t.dt, id: t.id});
+            }
+        } else {
+            newTouch(touch.clientX, touch.clientY, touch.identifier);
+        }
+    }
+    return changed;
+}
 
+function newTouch(x, y, id) {
+    let touch = {};
+    touch.start = {x: x, y: y};
+    touch.loc = {x: x, y: y};
+    touch.d = {x: 0, y: 0, c: 0};
+    touch.dt = {x: 0, y: 0};
+    touch.id = id;
+    touch.ts = Date.now();
+    touch.state = "";
+    input.touches[id] = touch;
+}
 

@@ -1,6 +1,6 @@
-from sanic import Sanic
-
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
 import collections
 import random
 import json
@@ -66,6 +66,20 @@ async def recv_json(socket):
     packet = await socket.recv()
     return json.loads(packet)
 
+async def broadcast(typ, pld):
+    #TODO MAKE THIS LESS JANK?
+    #tasks = []
+    #executor = ThreadPoolExecutor(len(user_index))
+    #loop = asyncio.get_event_loop();
+    print("broadcasting...")
+    for uid in user_index.keys():
+        packet = make_packet("server", typ, uid, pld);
+        await send_json(user_index[uid], packet);
+        #executor.submit(user_index[uid].send, json.dumps(packet))
+        #executor.submit(send_json, user_index[uid], packet)
+        #loop.run_in_executor(executor, send_json(user_index[uid], packet))
+    #await executor.shutdown()
+
 ## INBOUND
 
 async def serve_connect(request, socket):
@@ -90,17 +104,25 @@ async def serve_connect(request, socket):
         pages_packet = make_packet("server", "page_list", uid, app.config.TABLE.pages)
         await send_json(socket, pages_packet)
 
+        # send selected page
+        page_pack = make_packet("server", "page_select", uid, app.config.TABLE.current_page);
+        await send_json(socket, page_pack)
+        print("sent selected page packet");
+
         # handle comms
         print("Starting watch loop...")
         while True:
             packet = await recv_json(socket)
 
             if packet["destination"] == "host" and host_socket is not None:
-                send_json(host_socket, packet)
+                print("forwarding packet to host...");
+                print(packet)
+                await send_json(host_socket, packet)
 
             elif packet["destination"] == "server":
                 if packet["type"] == "load_page":
-                    app.config.TABLE.load_page(packet["payload"])
+                    if app.config.TABLE.load_page(packet["payload"]) != None:
+                        await broadcast("page_select", packet['payload']);
                 # TODO HANDLE REQUESTS TO SERVER
 
     finally:
