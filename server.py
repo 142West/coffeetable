@@ -115,8 +115,6 @@ async def serve_connect(request, socket):
             packet = await recv_json(socket)
 
             if packet["destination"] == "host" and host_socket is not None:
-                print("forwarding packet to host...");
-                print(packet)
                 await send_json(host_socket, packet)
 
             elif packet["destination"] == "server":

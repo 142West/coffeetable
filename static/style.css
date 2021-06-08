@@ -4,10 +4,8 @@
     font-family: orbitron;
     src: url(font/orbitron-black.ttf) format("truetype")
 }
-html {
-    height:100vh;
-}
-body {
+
+html, body {
     background-color: #FFFFFF;
     text-align: center;
     vertical-align: middle;
