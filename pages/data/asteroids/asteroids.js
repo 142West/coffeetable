@@ -47,7 +47,7 @@ function run() {
 }
 
 function runStart() {
-    if(players.length > 0 && ready >= players.length / 2) { // TODO STRICTLY GREATER THAN?
+    if(players.length > 0 && ready > 0 && ready >= players.length / 2) {
         prepGame();
         STATE = "game";
     }
@@ -125,6 +125,9 @@ function prepStart() {
     STATE = "start";
     for (let x = 0; x < 5; x ++) {
         spawnAsteroid();
+    }
+    for (let player of players) {
+        player.score = 0;
     }
 }
 

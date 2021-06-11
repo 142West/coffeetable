@@ -640,7 +640,43 @@ function addEventListeners() {
                 tap(loc);
                 break;
         }
+        if (VIEW == "direction") {
+            switch(e.keyCode) {
+                case 37: //left
+                    sendPacket("input_start", COLOR, "host", "left");
+                    break;
+                case 38: //up
+                    sendPacket("input_start", COLOR, "host", "up");
+                    break;
+                case 39: //right
+                    sendPacket("input_start", COLOR, "host", "right");
+                    break;
+                case 40://down
+                    sendPacket("input_start", COLOR, "host", "down");
+                    break;
+            }
+        }
     }
+    
+    document.onkeyup = e => {
+        if (VIEW == "direction") {
+            switch(e.keyCode) {
+                case 37: //left
+                    sendPacket("input_end", COLOR, "host", "left");
+                    break;
+                case 38: //up
+                    sendPacket("input_end", COLOR, "host", "up");
+                    break;
+                case 39: //right
+                    sendPacket("input_end", COLOR, "host", "right");
+                    break;
+                case 40://down
+                    sendPacket("input_end", COLOR, "host", "down");
+                    break;
+            }
+        }
+    }
+     
 
     document.getElementById("btn-select").addEventListener("click", e => {
         changeView("select");

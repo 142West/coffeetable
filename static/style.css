@@ -97,6 +97,8 @@ sub {}
     z-index: 10;
 
     padding:10px;
+    box-sizing: border-box;
+
     font-family: 'Orbitron', sans-serif;
     font-size: 20px;
 
