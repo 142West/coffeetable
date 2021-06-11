@@ -219,7 +219,7 @@ function playerRespawn(player) {
 function addScore(player, score) {
     let s = player.score;
     player.score += score;
-    if (s % 100000 > s % 100000) {
+    if (s % 100000 > player.score % 100000) {
         player.lives++;
     }
 }

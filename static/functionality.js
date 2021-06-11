@@ -93,6 +93,9 @@ function socketMessage(message) {
             SELECTED_PAGE = m.payload;
             console.log(SELECTED_PAGE);
             break;
+        case "help_text":
+            render.info.txt = m.payload;
+            renderInfoRecieved();
     }
 }
 
@@ -178,6 +181,10 @@ function setupRendering() {
     render.dir.bg.src = "img/direction-bg.png";
 
     render.txt = {};
+
+    render.info = {}
+    render.info.txt = "";
+    render.info.shown = false;
 }
 
 function scaleCanvas() {
@@ -347,6 +354,8 @@ function setupProportion() {
 function renderProportion() {
 
 }
+
+
 //TODO
 //joystick
 //keyboard inputs (dir, joy, txt)
@@ -392,6 +401,38 @@ function submitText() {
 function resetTextButton() {
     let btn = document.getElementById("text-btn");
     render.txt.btn.style.opacity = "1";
+}
+
+// INFO PAGE
+function renderInfoRecieved() {
+    let btn = document.getElementById("btn-info");
+    btn.src = "img/info-icon-message.png";
+}
+function showInfo() {
+    if (!render.info.shown) {
+        let btn = document.getElementById("btn-info");
+        btn.src = "img/info-icon-selected.png";
+        let d = document.createElement("div");
+        let theme = themeColors(COLOR);
+        d.innerText = render.info.txt;
+        d.className = "infobox";
+        document.body.appendChild(d);
+        d.id = "infobox";
+        d.style.backgroundColor = theme[2];
+        d.style.borderBottomColor = theme[0];
+        d.style.color = "#FFFFFF";
+        d.height = "" + (window.innerheight - 72) + "px";
+        render.info.shown = true;
+    }
+    else {
+        let d = document.getElementById("infobox");
+        let btn = document.getElementById("btn-info");
+        btn.src = "img/info-icon.png";
+        d.remove();
+        render.DOM.splice(render.DOM.indexOf(d), 1);
+        render.info.shown = false;
+    }
+
 }
 
 /*------------ DOM ------------*/
@@ -612,6 +653,9 @@ function addEventListeners() {
     });
     document.getElementById("btn-text").addEventListener("click", e => {
         changeView("text");
+    });
+    document.getElementById("btn-info").addEventListener("click", e => {
+        showInfo();
     });
 
     window.addEventListener("resize", scaleCanvas);

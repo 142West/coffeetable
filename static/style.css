@@ -84,6 +84,24 @@ sub {}
     z-index: 4;
 }
 
+.infobox {
+    background-color:#222222;
+    position:absolute;
+    left:0px;
+    top:52px;
+    width:100%;
+
+    border-color:#FFFFFF;
+    border-bottom-style:solid;
+    border-bottom-width:2px;
+    z-index: 10;
+
+    padding:10px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+
+}
+
 .foot {
     background-color:#811111;
     position:absolute;
