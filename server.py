@@ -120,7 +120,7 @@ async def serve_connect(request, socket):
             elif packet["destination"] == "server":
                 if packet["type"] == "load_page":
                     if app.config.TABLE.load_page(packet["payload"]) != None:
-                        await broadcast("page_select", packet['payload']);
+                        await broadcast("page_select", packet['payload'])
                 # TODO HANDLE REQUESTS TO SERVER
 
     finally:
@@ -135,6 +135,10 @@ async def serve_connect(request, socket):
 async def serve_host_connect(request, socket):
     global host_socket, user_index
     # TODO check for permission
+    if (socket.remote_address[0] != socket.local_address[0]):
+        print("HOST CONNECTION FAILED: INVALID AUTHENTICATION")
+        await socket.close()
+        return
     host_socket = socket
     try:
         for uid in user_index.keys():
@@ -145,13 +149,13 @@ async def serve_host_connect(request, socket):
             packet = await recv_json(socket)
 
             if packet["destination"] in user_index.keys(): # passthrough to client
-                send_json(user_index[packet["destination"]], packet)
+                await send_json(user_index[packet["destination"]], packet)
 
             elif packet["destination"] == "server": # host wants something from server
                 pass # TODO HANDLE THE SERVER REQUEST?
     finally:
         print("HOST DISCONNECTED")
-        host_socket = None
+        #host_socket = None
         # inform users of the hosts's passing?
 
 @app.main_process_start

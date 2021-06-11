@@ -1,3 +1,4 @@
+// Uses common/vectors.js
 const MIRROR_RATIO = 0.00005;
 const MIRROR_LEN = 0.2;
 const LASER_RATIO = 0.5;
@@ -132,34 +133,7 @@ function doesIntersect(a1, a2, a3, a4) {
 
 }
 
-function vAdd(a, b) {
-    return {x: a.x + b.x, y: a.y + b.y}
-}
-
-function vSub(a, b){
-    return vAdd(a, vScale(b, -1));
-}
-
-function vDot(a, b) {
-    return a.x * b.x + a.y * b.y;
-}
-
-function vScale(v, a) {
-    return {x: v.x * a, y: v.y * a};
-}
-
-function vLength(v) {
-    return Math.sqrt(Math.pow(v.x, 2) + Math.pow(v.y, 2));
-}
-
-function vProj(a, b) {
-    return vScale(b, vDot(a, b) / vDot(b, b));
-}
-
-function vNorm(a) {
-    return vScale(a, 1/vLength(a));
-}
-
 function getRandomLoc(max, offset) {
 	return Math.floor(Math.random() * (max - offset));
 }
+

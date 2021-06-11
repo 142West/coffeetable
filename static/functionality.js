@@ -451,7 +451,7 @@ function translation(loc, delta, dt) {
 function touchChanged(id) {
     let touch = input.touches[id];
     let state = touch.state;
-    const threshold = 20;
+    const threshold = 30;
     switch (VIEW) {
         case "direction":
             if (Math.abs(touch.d.x) > Math.abs(touch.d.y)) { 
@@ -475,9 +475,11 @@ function touchChanged(id) {
             if (touch.state != state) {
                 if (state != "") {
                     sendPacket("input_end", COLOR, "host", state);
+                    console.log("end input")
                 }
                 if (touch.state != "") {
                     sendPacket("input_start", COLOR, "host", touch.state);
+                    console.log("start input");
                 }
             }
             break;
@@ -487,11 +489,12 @@ function touchChanged(id) {
 function touchEnded(id){
     let touch = input.touches[id];
     let state = touch.state;
-    const threshold = 20;
+    const threshold = 30;
     switch (VIEW) {
         case "direction":
             if (state != "") {
                 sendPacket("input_end", COLOR, "host", state);
+                console.log("end input");
             }
             break;
     }
@@ -513,7 +516,7 @@ function tap(loc) {
 function addEventListeners() {
     const body = document.getElementById("screen-box");
     const tapThreshold = 250; // ms
-    const dragThreshold = 20;
+    const dragThreshold = 30;
     input.mouse = false;
     input.touch = false;
     input.touches = {};
@@ -566,6 +569,9 @@ function addEventListeners() {
             if (Date.now() - t.ts < tapThreshold &&
                 t.d.c < dragThreshold) {
                 tap(t.loc);
+            }
+            else {
+                touchEnded(touch.identifier);
             }
             delete input.touches[touch.identifier];
         }
