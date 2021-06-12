@@ -51,6 +51,12 @@ HOST.init = function () {
                         e.text = m.payload.content;
                         HOST.ontext(e);
                         break;
+                    case "proportion":
+                        e.id = m.payload.id;
+                        e.angle - m.payload.angle;
+                        e.strength = m.payload.strength;
+                        HOST.onjoystick(e);
+                        break;
                 }
                 break;
             case "input_start":

@@ -188,6 +188,8 @@ function playerPoints(player) {
     pts.push(vAdd(player.loc, vScale(vFromAngle(player.angle), 12)));
     pts.push(vAdd(player.loc, vScale(vFromAngle(player.angle + 4 * Math.PI / 5), 12)));
     pts.push(vAdd(player.loc, vScale(vFromAngle(player.angle - 4 * Math.PI / 5), 12)));
+    pts.push(vAdd(player.loc, vScale(vFromAngle(player.angle + 5 * Math.PI / 6), 8)));
+    pts.push(vAdd(player.loc, vScale(vFromAngle(player.angle - 5 * Math.PI / 6), 8)));
     return pts;
 }
 
@@ -306,8 +308,9 @@ function drawPlayer(player) {
     ctx.lineWidth = 2;
     drawLine(points[0], points[1]);
     drawLine(points[0], points[2]);
-    drawLine(player.loc, points[1]);
-    drawLine(player.loc, points[2]);
+    drawLine(points[1], points[3]);
+    drawLine(points[2], points[4]);
+    drawLine(points[4], points[3]);
 }
 
 function drawAsteroid(asteroid) {

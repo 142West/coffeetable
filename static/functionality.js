@@ -180,6 +180,14 @@ function setupRendering() {
     render.dir.bg = new Image();
     render.dir.bg.src = "img/direction-bg.png";
 
+    render.joy = {};
+    render.joy.head = new Image();
+    render.joy.head.src = "img/joystick-head.png";
+    render.joy.ring = new Image();
+    render.joy.ring.src = "img/joystick-ring.png";
+    render.joy.bg = new Image();
+    render.joy.bg.src = "img/joystick-bg.png";
+
     render.txt = {};
 
     render.info = {}
@@ -352,13 +360,38 @@ function setupProportion() {
 
 }
 function renderProportion() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const bg_scale = 4;
+    ctx.globalAlpha = 0.3;
+    ctx.drawImage(render.joy.bg, canvas.width/2 - 32 * bg_scale, canvas.height/2 - 4 * bg_scale, 64 * bg_scale, 8 * bg_scale);
+    ctx.globalAlpha = 1;
 
+    const scale = 5;
+    const w_head = 18;
+    const w_ring = 24;
+    const rad_ring = (w_ring - 4) / 2;
+    
+    for(const [k, v] of Object.entries(input.touches)) {
+        let x = v.loc.x;
+        let y = v.loc.y;
+        if (v.d.c > scale * rad_ring) {
+            x = v.start.x + (rad_ring * scale) * (v.d.x / v.d.c);
+            y = v.start.y + (rad_ring * scale) * (v.d.y / v.d.c);
+        }
+
+        ctx.drawImage(render.joy.ring, v.start.x - scale * w_ring / 2, v.start.y - scale * w_ring / 2, w_ring * scale, w_ring * scale);
+        ctx.drawImage(render.joy.head, x - scale * w_head / 2, y - scale * w_head / 2, w_head * scale, w_head * scale);
+    }
+
+    if (VIEW == "proportion") {
+        requestAnimationFrame(renderProportion);
+    }
 }
 
 
 //TODO
 //joystick
-//keyboard inputs (dir, joy, txt)
+//keyboard inputs (joy)
 //use instructions
 //show when disconnected?
 
@@ -524,6 +557,12 @@ function touchChanged(id) {
                 }
             }
             break;
+        case "proportion":
+            let a = Math.atan2(touch.d.y, touch.d.x);
+            let s = Math.min(touch.d.c / 50, 1); // MAGIC VALUE, see proportion display
+            sendPacket("input", COLOR, "host", 
+                {type: "proportion", angle: a, strength: s, id: touch.lid});
+            break;
     }
 }
 
@@ -548,8 +587,8 @@ function tap(loc) {
             sendPacket("load_page", COLOR, "server", PAGE_LIST[render.sel.selected]);
             break;
         case "direction":
+        case "proportion":
             sendPacket("input", COLOR, "host", {type:"tap"});
-            console.log("sent tap packet...");
             break;
     }
 }
@@ -561,6 +600,7 @@ function addEventListeners() {
     input.mouse = false;
     input.touch = false;
     input.touches = {};
+    input.lidpool = [1, 1, 1, 1];
     
     /*------  MOUSE CONTROLS ---------*/
     body.addEventListener('mousemove', e => {
@@ -614,6 +654,7 @@ function addEventListeners() {
             else {
                 touchEnded(touch.identifier);
             }
+            input.lidpool[t.lid] = 1;
             delete input.touches[touch.identifier];
         }
         input.touch = input.touches.length > 0;
@@ -719,6 +760,15 @@ function updateTouches(newTouches) {
     return changed;
 }
 
+function nextLID() {
+    let i = 0;
+    while (input.lidpool[i] == 0) {
+        i++;
+    }
+    input.lidpool[i] = 0;
+    return i;
+}
+
 function newTouch(x, y, id) {
     let touch = {};
     touch.start = {x: x, y: y};
@@ -728,6 +778,7 @@ function newTouch(x, y, id) {
     touch.id = id;
     touch.ts = Date.now();
     touch.state = "";
+    touch.lid = nextLID();
     input.touches[id] = touch;
 }
 

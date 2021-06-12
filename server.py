@@ -95,7 +95,7 @@ async def serve_connect(request, socket):
         await send_json(socket, response_packet)
 
         # inform server
-        if host_socket is not None:
+        if host_socket is not None and host_socket.open:
             print("Informing server...")
             register_packet = make_packet("server", "user_register", "host", uid)
             await send_json(host_socket, register_packet)
@@ -114,7 +114,7 @@ async def serve_connect(request, socket):
         while True:
             packet = await recv_json(socket)
 
-            if packet["destination"] == "host" and host_socket is not None:
+            if packet["destination"] == "host" and host_socket is not None and host_socket.open:
                 await send_json(host_socket, packet)
 
             elif packet["destination"] == "server":
@@ -128,7 +128,7 @@ async def serve_connect(request, socket):
         print("Removing from user index...")
         del(user_index[uid])
         print("Informing server...")
-        if host_socket is not None:
+        if host_socket is not None and host_socket.open:
             deregister_packet = make_packet("server", "user_deregister", "host", uid)
             await send_json(host_socket, deregister_packet)
 
