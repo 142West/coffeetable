@@ -92,6 +92,8 @@ function socketMessage(message) {
             console.log("recieved page select");
             SELECTED_PAGE = m.payload;
             console.log(SELECTED_PAGE);
+            render.info.txt = "This page has no hints.";
+            clearInfo();
             break;
         case "help_text":
             render.info.txt = m.payload;
@@ -123,6 +125,7 @@ function recolor(color) {
     document.getElementById("menubar").style.borderColor = theme[1]
     document.getElementById("screen").style.backgroundColor = theme[2];
     document.getElementById("footer").style.backgroundColor = theme[3];
+    render.updateRequired = true;
 }
 
 function colorToComp(color) {
@@ -161,6 +164,7 @@ function themeColors(color) {
 function setupRendering() {
     scaleCanvas();
     render.DOM = [];
+    render.updateRequired = false;
     
     render.sel = {};
     render.sel.left = new Image();
@@ -191,7 +195,7 @@ function setupRendering() {
     render.txt = {};
 
     render.info = {}
-    render.info.txt = "";
+    render.info.txt = "This page has no hints.";
     render.info.shown = false;
 }
 
@@ -200,10 +204,12 @@ function scaleCanvas() {
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
     ctx.imageSmoothingEnabled=false;
+    render.updateRequired = true;
 }
 
 function renderView(view) {
     renderClear();
+    render.updateRequired = true;
     switch (view) {
         case "select":
             setupSelect();
@@ -229,7 +235,11 @@ function renderClear() {
     for (let i of render.DOM) {
         i.remove();
     }
+    for (let i of document.getElementsByClassName("temporary")) {
+        i.remove();
+    }
     render.DOM = [];
+    render.updateRequired = true;
 }
 
 // SELECT PAGE
@@ -250,64 +260,64 @@ function setupSelect() {
     }
 }
 function renderSelect() {
-    ctx.textAlign = "center";
-    ctx.font = "32px Arial";
-    ctx.fillStyle = "#BFBFFF";
-    const offset = 45; // dist between lines of text
-    const frict = 0.8; // scale velocity each step
-    
-    // clear 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(render.sel.left, canvas.width/2 + 150 - 10, canvas.height/2 - 20, 20, 36);
-    ctx.drawImage(render.sel.right, canvas.width/2 - 150 - 10, canvas.height/2 - 20, 20, 36);
-
-    // clamp values (no overscroll)
-    if (render.sel.y > 10) {
-        render.sel.y = 10;
-    }
-    if (render.sel.y < -1 * offset * render.sel.names.length + offset - 10){
-        render.sel.y = -1 * offset * render.sel.names.length + offset - 10; 
-    }
-
-    // place all the texts
-    for (let i = 0; i < render.sel.names.length; i++) {
-        let d = render.sel.texts[i]; // get the div
-        let y = canvas.height / 2 + offset * i + render.sel.y; // calc position
-        let col = "#3535DD";
-        if (render.sel.values[i] == SELECTED_PAGE) {
-            col = "#6e6eff";
-        }
-        if (y <= canvas.height / 2 + offset / 2 && y > canvas.height / 2 - offset / 2) {
-            // this div is centered, highlight as selection
-            col = scaleColor(col, 1.2);
-            render.sel.selected = render.sel.names[i];
-        }
-        col = scaleColor(col, 1 - (Math.abs(y - canvas.height / 2) / (canvas.height / 2)));
-        // move it
-        setPos(d, canvas.width/2, Math.min(y, canvas.height - 20));
-        d.style.color = col;
-    }
-
-    const alignment = (((-1 * render.sel.y) + 22) % 45) - 22;
-    if (alignment > 0.5 && !input.mouse && !input.touch){
-        render.sel.v += 0.2 * Math.min(Math.sqrt(Math.abs(alignment)), 5);
-    }
-    if (alignment < -0.5 && ! input.mouse && !input.touch){
-        render.sel.v -= 0.2 * Math.min(Math.sqrt(Math.abs(alignment)), 5);
-    }
-    // retain velocity after user stops interacting
-    if (!input.mouse && !input.touch && Math.abs(render.sel.v) > 0) {
-        render.sel.y += render.sel.v;
-        render.sel.v *= frict;
-    }
-    if (Math.abs(render.sel.v) < 0.0001) { // floats are floaty
-        render.sel.v = 0;
-    }
-
-    // render the next frame unless the view has changed
+    // schedule the next frame unless the view has changed
     if (VIEW == "select") {        
         requestAnimationFrame(renderSelect);
     }
+
+    if (render.updateRequired || render.sel.v != 0 || input.touch || input.mouse) {
+        const offset = 45; // dist between lines of text
+        const frict = 0.8; // scale velocity each step
+        
+        // clear 
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(render.sel.left, canvas.width/2 + 150 - 10, canvas.height/2 - 20, 20, 36);
+        ctx.drawImage(render.sel.right, canvas.width/2 - 150 - 10, canvas.height/2 - 20, 20, 36);
+
+        // clamp values (no overscroll)
+        if (render.sel.y > 10) {
+            render.sel.y = 10;
+        }
+        if (render.sel.y < -1 * offset * render.sel.names.length + offset - 10){
+            render.sel.y = -1 * offset * render.sel.names.length + offset - 10; 
+        }
+
+        // place all the texts
+        for (let i = 0; i < render.sel.names.length; i++) {
+            let d = render.sel.texts[i]; // get the div
+            let y = canvas.height / 2 + offset * i + render.sel.y; // calc position
+            let col = "#3535DD";
+            if (render.sel.values[i] == SELECTED_PAGE) {
+                col = "#6e6eff";
+            }
+            if (y <= canvas.height / 2 + offset / 2 && y > canvas.height / 2 - offset / 2) {
+                // this div is centered, highlight as selection
+                col = scaleColor(col, 1.2);
+                render.sel.selected = render.sel.names[i];
+            }
+            col = scaleColor(col, 1 - (Math.abs(y - canvas.height / 2) / (canvas.height / 2)));
+            // move it
+            setPos(d, canvas.width/2, Math.min(y, canvas.height - 20));
+            d.style.color = col;
+        }
+
+        const alignment = (((-1 * render.sel.y) + 22) % 45) - 22;
+        if (alignment > 0.5 && !input.mouse && !input.touch){
+            render.sel.v += 0.2 * Math.min(Math.sqrt(Math.abs(alignment)), 5);
+        }
+        if (alignment < -0.5 && ! input.mouse && !input.touch){
+            render.sel.v -= 0.2 * Math.min(Math.sqrt(Math.abs(alignment)), 5);
+        }
+        // retain velocity after user stops interacting
+        if (!input.mouse && !input.touch && Math.abs(render.sel.v) > 0) {
+            render.sel.y += render.sel.v;
+            render.sel.v *= frict;
+        }
+        if (Math.abs(render.sel.v) < 0.0001) { // floats are floaty
+            render.sel.v = 0;
+        }
+    }
+
 }
 
 // DIRECTION PAGE
@@ -316,42 +326,45 @@ function setupDirection() {
     
 }
 function renderDirection() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const bg_scale = 4;
-    ctx.globalAlpha = 0.3;
-    ctx.drawImage(render.dir.bg, canvas.width/2 - 36 * bg_scale, canvas.height/2 - 8 * bg_scale, 72 * bg_scale, 16 * bg_scale);
-    ctx.globalAlpha = 1;
-    for(const [k, v] of Object.entries(input.touches)) {
-        const scale = 6;
-        const x = v.start.x - 7 * scale;
-        const y = v.start.y - 7 * scale;
-        if ( v.state == "" && Date.now() - v.ts > 300) {
-            ctx.drawImage(render.dir.up, x, y - 11 * scale, 14 * scale, 13 * scale);
-            ctx.drawImage(render.dir.down, x, y + 13 * scale, 14 * scale, 13 * scale);
-            ctx.drawImage(render.dir.left, x - 11 * scale, y, 12 * scale, 15 * scale);
-            ctx.drawImage(render.dir.right, x + 12 * scale, y, 12 * scale, 15 * scale);
-
-            // render all small arrows
-        }
-        if ( v.state != "") {
-            switch (v.state) {
-                case "up"://14x13
-                    ctx.drawImage(render.dir.up, x, y - 11 * scale, 14 * scale, 13 * scale);
-                    break;
-                case "down"://14x13
-                    ctx.drawImage(render.dir.down, x, y + 13 * scale, 14 * scale, 13 * scale);
-                    break;
-                case "left"://12x15
-                    ctx.drawImage(render.dir.left, x - 11 * scale, y, 12 * scale, 15 * scale);
-                    break;
-                case "right":
-                    ctx.drawImage(render.dir.right, x + 12 * scale, y, 12 * scale, 15 * scale);
-                    break;
-            }
-        }
-    }
     if (VIEW == "direction") {
         requestAnimationFrame(renderDirection)
+    }
+    
+    if (render.updateRequired || Object.keys(input.touches).length > 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const bg_scale = 4;
+        ctx.globalAlpha = 0.3;
+        ctx.drawImage(render.dir.bg, canvas.width/2 - 36 * bg_scale, canvas.height/2 - 8 * bg_scale, 72 * bg_scale, 16 * bg_scale);
+        ctx.globalAlpha = 1;
+        for(const [k, v] of Object.entries(input.touches)) {
+            const scale = 6;
+            const x = v.start.x - 7 * scale;
+            const y = v.start.y - 7 * scale;
+            if ( v.state == "" && Date.now() - v.ts > 300) {
+                ctx.drawImage(render.dir.up, x, y - 11 * scale, 14 * scale, 13 * scale);
+                ctx.drawImage(render.dir.down, x, y + 13 * scale, 14 * scale, 13 * scale);
+                ctx.drawImage(render.dir.left, x - 11 * scale, y, 12 * scale, 15 * scale);
+                ctx.drawImage(render.dir.right, x + 12 * scale, y, 12 * scale, 15 * scale);
+
+                // render all small arrows
+            }
+            if ( v.state != "") {
+                switch (v.state) {
+                    case "up"://14x13
+                        ctx.drawImage(render.dir.up, x, y - 11 * scale, 14 * scale, 13 * scale);
+                        break;
+                    case "down"://14x13
+                        ctx.drawImage(render.dir.down, x, y + 13 * scale, 14 * scale, 13 * scale);
+                        break;
+                    case "left"://12x15
+                        ctx.drawImage(render.dir.left, x - 11 * scale, y, 12 * scale, 15 * scale);
+                        break;
+                    case "right":
+                        ctx.drawImage(render.dir.right, x + 12 * scale, y, 12 * scale, 15 * scale);
+                        break;
+                }
+            }
+        }
     }
 }
 
@@ -360,40 +373,40 @@ function setupProportion() {
 
 }
 function renderProportion() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const bg_scale = 4;
-    ctx.globalAlpha = 0.3;
-    ctx.drawImage(render.joy.bg, canvas.width/2 - 32 * bg_scale, canvas.height/2 - 4 * bg_scale, 64 * bg_scale, 8 * bg_scale);
-    ctx.globalAlpha = 1;
-
-    const scale = 5;
-    const w_head = 18;
-    const w_ring = 24;
-    const rad_ring = (w_ring - 4) / 2;
-    
-    for(const [k, v] of Object.entries(input.touches)) {
-        let x = v.loc.x;
-        let y = v.loc.y;
-        if (v.d.c > scale * rad_ring) {
-            x = v.start.x + (rad_ring * scale) * (v.d.x / v.d.c);
-            y = v.start.y + (rad_ring * scale) * (v.d.y / v.d.c);
-        }
-
-        ctx.drawImage(render.joy.ring, v.start.x - scale * w_ring / 2, v.start.y - scale * w_ring / 2, w_ring * scale, w_ring * scale);
-        ctx.drawImage(render.joy.head, x - scale * w_head / 2, y - scale * w_head / 2, w_head * scale, w_head * scale);
-    }
-
     if (VIEW == "proportion") {
         requestAnimationFrame(renderProportion);
+    }
+    
+    if (render.updateRequired || Object.keys(input.touches).length > 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const bg_scale = 4;
+        ctx.globalAlpha = 0.3;
+        ctx.drawImage(render.joy.bg, canvas.width/2 - 32 * bg_scale, canvas.height/2 - 4 * bg_scale, 64 * bg_scale, 8 * bg_scale);
+        ctx.globalAlpha = 1;
+
+        const scale = 5;
+        const w_head = 18;
+        const w_ring = 24;
+        const rad_ring = (w_ring - 4) / 2;
+        
+        for(const [k, v] of Object.entries(input.touches)) {
+            let x = v.loc.x;
+            let y = v.loc.y;
+            if (v.d.c > scale * rad_ring) {
+                x = v.start.x + (rad_ring * scale) * (v.d.x / v.d.c);
+                y = v.start.y + (rad_ring * scale) * (v.d.y / v.d.c);
+            }
+
+            ctx.drawImage(render.joy.ring, v.start.x - scale * w_ring / 2, v.start.y - scale * w_ring / 2, w_ring * scale, w_ring * scale);
+            ctx.drawImage(render.joy.head, x - scale * w_head / 2, y - scale * w_head / 2, w_head * scale, w_head * scale);
+        }
     }
 }
 
 
 //TODO
-//joystick
 //keyboard inputs (joy)
 //use instructions
-//show when disconnected?
 
 //TEXT PAGE
 function setupText() {
@@ -414,12 +427,14 @@ function setupText() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 function renderText() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setPos(render.txt.input, canvas.width/2, canvas.height/4 + 20);
-    setPos(render.txt.btn, canvas.width/2, canvas.height/2 + 20);
-
     if (VIEW == "text") {
         requestAnimationFrame(renderText);
+    }
+    if (render.updateRequired) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        render.txt.btn.style.backgroundColor = COLOR;
+        setPos(render.txt.input, canvas.width/2, canvas.height/4 + 20);
+        setPos(render.txt.btn, canvas.width/2, canvas.height/2 + 20);
     }
 }
 function submitText() {
@@ -438,8 +453,13 @@ function resetTextButton() {
 
 // INFO PAGE
 function renderInfoRecieved() {
-    let btn = document.getElementById("btn-info");
-    btn.src = "img/info-icon-message.png";
+    if (!render.info.shown) {
+        let btn = document.getElementById("btn-info");
+        btn.src = "img/info-icon-message.png";
+    } else {
+        clearInfo();
+        showInfo();
+    }
 }
 function showInfo() {
     if (!render.info.shown) {
@@ -458,14 +478,18 @@ function showInfo() {
         render.info.shown = true;
     }
     else {
-        let d = document.getElementById("infobox");
-        let btn = document.getElementById("btn-info");
-        btn.src = "img/info-icon.png";
+        clearInfo()
+    }
+}
+function clearInfo() {
+    let d = document.getElementById("infobox");
+    let btn = document.getElementById("btn-info");
+    btn.src = "img/info-icon.png";
+    if (d != null) {
         d.remove();
         render.DOM.splice(render.DOM.indexOf(d), 1);
-        render.info.shown = false;
     }
-
+    render.info.shown = false;
 }
 
 /*------------ DOM ------------*/
@@ -474,6 +498,7 @@ function makeDiv(clazz, text) {
     let obj = document.createElement("div");
     obj.innerText = text;
     obj.className = clazz;
+    obj.classList.add("temporary");
     document.getElementById("screen-box").appendChild(obj);
     render.DOM.push(obj);
     return obj;
@@ -482,6 +507,7 @@ function makeDiv(clazz, text) {
 function makeInput(clazz) {
     let obj = document.createElement("input");
     obj.className = clazz;
+    obj.classList.add("temporary");
     document.body.appendChild(obj);
     render.DOM.push(obj);
     return obj;
@@ -490,6 +516,7 @@ function makeInput(clazz) {
 function makeImg(clazz, src) {
     let obj = document.createElement("img");
     obj.className = clazz;
+    obj.classList.add("temporary");
     obj.src = src;
     document.body.appendChild(obj);
     render.DOM.push(obj);
@@ -500,6 +527,7 @@ function makeButton(clazz, text, callback) {
     let obj = document.createElement("button");
     obj.innerText = text;
     obj.className = clazz;
+    obj.classList.add("temporary");
     obj.onclick = callback;
     document.getElementById("screen-box").appendChild(obj);
     render.DOM.push(obj);

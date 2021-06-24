@@ -4,6 +4,10 @@
     font-family: orbitron;
     src: url(font/orbitron-black.ttf) format("truetype")
 }
+@font-face {
+    font-family: pixel-I;
+    src: url(font/pixel2.ttf) format("truetype")
+}
 
 html, body {
     background-color: #FFFFFF;
@@ -60,8 +64,8 @@ sub {}
     width:300px;
     transform:translate(-50%,-50%);
     color:#3535DD;
-    font-family: 'Orbitron', sans-serif;
-    font-size:30px;
+    font-family: 'pixel-I', 'Orbitron', sans-serif;
+    font-size:25px;
     z-index: 4;
     user-select: none;
 }
@@ -99,8 +103,8 @@ sub {}
     padding:10px;
     box-sizing: border-box;
 
-    font-family: 'Orbitron', sans-serif;
-    font-size: 20px;
+    font-family: 'pixel-I', 'Orbitron', sans-serif;
+    font-size: 18px;
 
 }
 
