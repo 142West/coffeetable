@@ -1,10 +1,16 @@
 
+@font-face {
+    font-family: pixel;
+    src: url(../common/font/pixel2.ttf) format("truetype")
+}
+
 html, body {
     background-color: #FFFFFF;
     text-align: center;
     vertical-align: middle;
     padding: 0px;
     margin: 0px;
+    font-family: 'pixel', sans-serif;
 }
 
 canvas {

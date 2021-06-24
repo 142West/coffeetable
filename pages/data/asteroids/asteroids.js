@@ -248,7 +248,7 @@ function draw() {
         case "gameover":
             ctx.fillStyle = "#FFFFFF";
             ctx.textAlign = "center";
-            ctx.font = "80px sans";
+            ctx.font = "80px pixel";
             ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
             drawScores();
             break;
@@ -257,9 +257,9 @@ function draw() {
             let y = canvas.height / 2;
             ctx.fillStyle = "#FFFFFF";
             ctx.textAlign = "center";
-            ctx.font = "80px sans";
+            ctx.font = "80px pixel";
             ctx.fillText('ASTEROIDS', x, y);
-            ctx.font = "30px sans";
+            ctx.font = "30px pixel";
             ctx.fillText("TAP TO START", x, y + 140);
             ctx.fillText("" + ready + " / " + Math.floor(players.length / 2), x, y + 170 );
             break;
@@ -332,7 +332,7 @@ function drawScores() {
         let x = 30 + i * 180;
         let fakePlayer = {loc: vNew(x + 10, 50), angle: Math.PI / -2, color: player.color};
         ctx.textAlign = "left";
-        ctx.font = "40px sans";
+        ctx.font = "30px pixel";
         ctx.fillStyle = player.color;
         ctx.fillText("" + player.score, x, 30);
         for (let l = 0; l < player.lives; l++) {
