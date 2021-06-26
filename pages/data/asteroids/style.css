@@ -1,7 +1,7 @@
 
 @font-face {
     font-family: pixel;
-    src: url(../common/font/pixel2.ttf) format("truetype")
+    src: url("asteroids.ttf") format("truetype")
 }
 
 html, body {
