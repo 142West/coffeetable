@@ -4,9 +4,67 @@
     <link rel="stylesheet" href="style.css">
 	</head>
 	<body>
-        <div>Under Construction</div>
-		<canvas id="screen" ></canvas>
+        <div class="container">
+            <div id="left">
+            </div>
+            <div id="center" class="center">
+                <div id="oldguessholder" class="oldguessholder h_45">
+                </div>
+                <div id="guessholder" class="h_10" style="opacity:1;">
+                     <div class="inputs">
+                        <div id="guess1" class="guessbox-big">//</div>
+                        <div id="equals" class="eq-big"><b>≠</b></div>
+                        <div id="guess2" class="guessbox-big">//</div>
+                    </div>
+                </div>
+                <div class="roundbox h_45" id="round-display">
+                    <div class="roundlabel">Round</div>
+                    <div class="roundnumber" id="roundnum">0</div>
+                </div>
+            </div>
+            <div id="right">
+            </div>
+        </div>
 	</body>
+    <template id="inputs-small-t">
+         <div class="inputs">
+            <div class="guessbox"></div>
+            <div class="eq"><b>≠</b></div>
+            <div class="guessbox"></div>
+        </div>
+    </template>
+    <template id="inputs-small-t-match">
+         <div class="inputs">
+            <div class="guessbox-yes"></div>
+            <div class="eq"><b>=</b></div>
+            <div class="guessbox-yes"></div>
+        </div>
+    </template>
+    <template id="inputs-big-t">
+         <div class="inputs">
+            <div class="guessbox-big"></div>
+            <div class="eq-big"><b>≠</b></div>
+            <div class="guessbox-big"></div>
+        </div>
+    </template>
+    <template id="player-left-t">
+        <div class="players_l">
+            <div class="phoneicon">¶</div>
+            <div class="phonestats">
+                <div>0 Guesses</div>
+                <div>0 Matches</div>
+            </div>
+        </div>
+    </template>
+    <template id="player-right-t">
+        <div class="players_r">
+            <div class="phonestats">
+                <div>0 Guesses</div>
+                <div>0 Matches</div>
+            </div>
+            <div class="phoneicon">¶</div>
+        </div>
+    </template>
 	<script src="../common/host.js"></script>
 	<script src="vampire.js"></script>
 </html>

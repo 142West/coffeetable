@@ -1,21 +1,130 @@
 
+@font-face {
+    font-family: symbols;
+    src: url("symbols-1.ttf") format("truetype")
+}
+
 html, body {
-    background-color: #FFFFFF;
+    background-color: #121009;
     text-align: center;
     vertical-align: middle;
+    color: #FFFFFF;
     padding: 0px;
     margin: 0px;
+    font-family: sans;
 }
 
 canvas {
-    background-color: #000000;
+    background-color: #121009;
 }
 
-img {
-    position: absolute;
-    width: 30%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
 sub {}
+
+.h_45 {
+    height:45%;
+}
+.h_10 {
+    height:10%;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items:stretch;
+    width:100%;
+    height:100%;
+    
+}
+
+.inputs {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items:center;
+    justify-content: space-between;
+    margin:6px;
+}
+
+.center {
+    display:flex;
+    flex-direction:column;
+    flex-wrap:nowrap;
+    justify-content: center;
+    align-items:center;
+    height:100%
+}
+
+.roundlabel {
+    font-family: sans-serif;
+    font-size:20;
+}
+.roundnumber {
+    font-size:40;
+}
+.roundbox {
+    margin:16px;
+}
+
+.guessbox, .guessbox-yes, .guessbox-big, .guessbox-big-yes{
+    border-radius: 5px;
+    padding:4px;
+    width:200px;
+    border-style:solid;
+    border-width:2px;
+    border-color:#ffffff;
+    background-color:#9e3a3a;
+    font-size:24;
+}
+.guessbox-big, .guessbox-big-yes {
+    background-color:#292929;
+    width:400px;
+    font-size:40;
+}
+.guessbox-yes, .guessbox-big-yes {
+    background-color: #323908;
+}
+
+.eq {
+    margin:4px;
+    font-size: 24;
+}
+.eq-big {
+    margin:4px;
+    font-size:40;
+}
+
+.oldguessholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.players_l, .players_r {
+    text-align:left;
+    display:flex;
+    flex-direction:row; 
+    margin:8px;
+}
+.players_r {
+    text-align:right;
+}
+.phoneicon {
+    width:30px;
+    margin:2px;
+    vertical-align:middle;
+    font-family: symbols;
+    font-size: 50;
+}
+.phonestats {
+    vertical-align:middle;
+    margin:3px
+}
+
+.overtint {
+  position:absolute;
+  background-color: rgba(255,0,0,0.6);
+  width:100%; height:100%;
+}
+
