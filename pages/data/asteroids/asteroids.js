@@ -3,6 +3,9 @@ const TURN = 0.055;
 const THRUST = 0.05;
 const ASTEROID_R = 20;
 
+const LIFE_SCORE = 10000;
+const STARTING_LIVES = 4
+
 let canvas = document.getElementById("screen");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -10,6 +13,7 @@ let ctx = canvas.getContext("2d");
 
 let STATE = "start"; // "start", "game", "gameover"
 let level = 0;
+let totalScore = 0;
 let players = [];
 let playermap = {};
 let asteroids = [];
@@ -17,6 +21,7 @@ let bullets = [];
 let particles = [];
 
 let ready = 0;
+
 
 HOST.view = "direction";
 HOST.help = "Shoot the asteroids without getting hit.\nLEFT/RIGHT to turn, UP to move, TAP to shoot";
@@ -47,10 +52,11 @@ function run() {
 }
 
 function runStart() {
-    if(players.length > 0 && ready > 0 && ready >= players.length / 2) {
+    if(players.length > 0 && ready > 0 && ready > players.length / 2) {
         prepGame();
         STATE = "game";
     }
+    tickParticles();
     tickAsteroids();
 }
 
@@ -98,14 +104,7 @@ function runGame() {
         }
     }
     // TICK PARTICLES
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let particle = particles[i];
-        particle.loc = vAdd(particle.vel, particle.loc);
-        particle.ttl--;
-        if (particle.ttl <= 0) {
-            particles.splice(i, 1);
-        }
-    }
+    tickParticles();
 
     // TICK ASTEROIDS
     tickAsteroids();
@@ -137,7 +136,7 @@ function prepGame() {
         player.vel = vNew(0, 0);
         player.score = 0;
         player.angle = Math.PI / -2;
-        player.lives = 3;
+        player.lives = STARTING_LIVES;
         player.respawn = false;
     }
     level = 0;
@@ -222,10 +221,16 @@ function playerRespawn(player) {
     Particles(player.loc, player.color);
 }
 function addScore(player, score) {
-    let s = player.score;
+    let s = totalScore;
     player.score += score;
-    if (s % 100000 > player.score % 100000) {
-        player.lives++;
+    totalScore += score;
+    if (s % LIFE_SCORE > totalScore % LIFE_SCORE) {
+        players.sort((a, b) => {a.score - b.score});
+        players.sort((a, b) => {a.lives - b.lives});
+        players[0].lives++;
+        if (players[0].lives == 1){
+            playerRespawn(players[0]);
+        }
     }
 }
 
@@ -237,6 +242,17 @@ function tickAsteroids() {
         asteroid.loc.y = mod(asteroid.loc.y, canvas.height);
         if (asteroid.to_remove == true) {
             asteroids.splice(i, 1);
+        }
+    }
+}
+
+function tickParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let particle = particles[i];
+        particle.loc = vAdd(particle.vel, particle.loc);
+        particle.ttl--;
+        if (particle.ttl <= 0) {
+            particles.splice(i, 1);
         }
     }
 }
@@ -261,7 +277,12 @@ function draw() {
             ctx.fillText('ASTEROIDS', x, y);
             ctx.font = "30px pixel";
             ctx.fillText("TAP TO START", x, y + 140);
-            ctx.fillText("" + ready + " / " + Math.floor(players.length / 2), x, y + 170 );
+            ctx.fillText("" + ready + " / " + Math.floor(players.length / 2 + 1), x, y + 170 );
+            ctx.textAlign = "start";
+            ctx.fillText("DRAG LEFT AND RIGHT ON YOUR SCREEN TO TURN", 10, 40);
+            ctx.fillText("DRUG UP TO ACCELERATE FORWARDS", 10, 80);
+            ctx.fillText("TAP TO FIRE", 10, 120);
+            drawStartPlayers();
             break;
         case "game":
             drawScores();
@@ -335,11 +356,32 @@ function drawScores() {
         ctx.font = "30px pixel";
         ctx.fillStyle = player.color;
         ctx.fillText("" + player.score, x, 30);
-        for (let l = 0; l < player.lives; l++) {
+        for (let l = 0; l < player.lives - 1; l++) {
             drawPlayer(fakePlayer);
             fakePlayer.loc.x += 20;
         }
     }
+    ctx.textAlign = "right";
+    ctx.font = "50px pixel";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("" + totalScore, canvas.width - 10, 50);
+    
+    ctx.fillStyle = "#888888";
+    ctx.fillRect(canvas.width - 10 - 200, 60, 200, 4);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(canvas.width - 10 - 200, 60, 200 * ((totalScore % LIFE_SCORE) / LIFE_SCORE), 4);
+}
+
+function drawStartPlayers() {
+    for (let i = 0; i < players.length; i++) {
+        let player = players[i];
+        let dx = Math.floor(canvas.width / (players.length + 1));
+        let x = dx * (i + 1)
+        player.loc = vNew(x, canvas.height - 50);
+        player.angle = Math.PI / -2
+        drawPlayer(player);
+    }
+
 }
 
 // HANDLERS -----------------------------
@@ -363,6 +405,7 @@ function tapHandler(e) {
     let player = playermap[e.uid];
     switch (STATE) {
         case "start":
+            Particles(player.loc, player.color);
             if (player.score == 0) {
                 ready += 1;
                 player.score = 1;
