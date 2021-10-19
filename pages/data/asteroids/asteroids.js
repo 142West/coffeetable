@@ -225,8 +225,8 @@ function addScore(player, score) {
     player.score += score;
     totalScore += score;
     if (s % LIFE_SCORE > totalScore % LIFE_SCORE) {
-        players.sort((a, b) => {a.score - b.score});
-        players.sort((a, b) => {a.lives - b.lives});
+        players.sort((a, b) => {return a.score - b.score});
+        players.sort((a, b) => {return a.lives - b.lives});
         players[0].lives++;
         if (players[0].lives == 1){
             playerRespawn(players[0]);
