@@ -71,15 +71,28 @@ HOST.init = function () {
                 HOST.ondirection(e);
                 break;
             case "input_end":
-                e.left = user_data.left && m.payload != "left";
-                e.right = user_data.right && m.payload != "right";
-                e.up = user_data.up && m.payload != "up";
-                e.down = user_data.down && m.payload != "down";
-                user_data.left = e.left;
-                user_data.right = e.right;
-                user_data.up = e.up;
-                user_data.down = e.down;
-                HOST.ondirection(e);
+                // legacy support, no type means direction.
+                if(m.payload.type == undefined) {
+                    e.left = user_data.left && m.payload != "left";
+                    e.right = user_data.right && m.payload != "right";
+                    e.up = user_data.up && m.payload != "up";
+                    e.down = user_data.down && m.payload != "down";
+                    user_data.left = e.left;
+                    user_data.right = e.right;
+                    user_data.up = e.up;
+                    user_data.down = e.down;
+                    HOST.ondirection(e);
+                } else {
+                    switch (m.payload.type) {
+                        case "proportion":
+                            e.id = m.payload.id;
+                            e.angle - m.payload.angle;
+                            e.strength = m.payload.strength;
+                            e.end = true;
+                            HOST.onjoystick(e);
+                            break;
+                    }
+                }
                 break;
 
             case "user_register":
@@ -111,6 +124,14 @@ function sendPacket(t, s, d, p) {
     if (HOST.socket != undefined && HOST.socket.readyState == 1) {
         HOST.socket.send(JSON.stringify({"type": t, "source": s,
             "destination": d, "payload": p}));
+    }
+}
+
+function broadcastPacket(t, s, p) {
+    if (HOST.socket != undefined && HOST.socket.readyState == 1) {
+        HOST.socket.send(JSON.stringify({"type": t, "source": s,
+            "destination": "broadcast", "payload": p}));
+        console.log("broadcast message?");
     }
 }
 

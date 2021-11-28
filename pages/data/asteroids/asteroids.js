@@ -3,8 +3,8 @@ const TURN = 0.055;
 const THRUST = 0.05;
 const ASTEROID_R = 20;
 
-const LIFE_SCORE = 10000;
-const STARTING_LIVES = 4
+const LIFE_SCORE_BASE = 10000;
+const STARTING_LIVES = 6
 
 let canvas = document.getElementById("screen");
 canvas.width = window.innerWidth;
@@ -19,6 +19,7 @@ let playermap = {};
 let asteroids = [];
 let bullets = [];
 let particles = [];
+lifeScore = LIFE_SCORE_BASE;
 
 let ready = 0;
 
@@ -128,6 +129,7 @@ function prepStart() {
     for (let player of players) {
         player.score = 0;
     }
+    broadcastPacket("unlock_input", "host", "");
 }
 
 function prepGame() {
@@ -140,7 +142,9 @@ function prepGame() {
         player.respawn = false;
     }
     level = 0;
+    lifeScore = LIFE_SCORE_BASE;
     asteroids = [];
+    broadcastPacket("lock_input", "host", "");
 }
 
 function nextLevel() {
@@ -219,17 +223,19 @@ function playerRespawn(player) {
     player.angle = Math.PI / -2;
     player.vel = vNew(0, 0);
     Particles(player.loc, player.color);
+    lifeScore = lifeScore * 1.1;
 }
 function addScore(player, score) {
     let s = totalScore;
     player.score += score;
     totalScore += score;
-    if (s % LIFE_SCORE > totalScore % LIFE_SCORE) {
-        players.sort((a, b) => {return a.score - b.score});
-        players.sort((a, b) => {return a.lives - b.lives});
-        players[0].lives++;
-        if (players[0].lives == 1){
-            playerRespawn(players[0]);
+    local_players = players.slice();
+    if (s % lifeScore > totalScore % lifeScore) {
+        local_players.sort((a, b) => {return a.score - b.score});
+        local_players.sort((a, b) => {return a.lives - b.lives});
+        local_players[0].lives++;
+        if (local_players[0].lives == 1){
+            playerRespawn(local_players[0]);
         }
     }
 }
@@ -280,7 +286,7 @@ function draw() {
             ctx.fillText("" + ready + " / " + Math.floor(players.length / 2 + 1), x, y + 170 );
             ctx.textAlign = "start";
             ctx.fillText("DRAG LEFT AND RIGHT ON YOUR SCREEN TO TURN", 10, 40);
-            ctx.fillText("DRUG UP TO ACCELERATE FORWARDS", 10, 80);
+            ctx.fillText("DRAG UP TO ACCELERATE FORWARDS", 10, 80);
             ctx.fillText("TAP TO FIRE", 10, 120);
             drawStartPlayers();
             break;
@@ -356,9 +362,16 @@ function drawScores() {
         ctx.font = "30px pixel";
         ctx.fillStyle = player.color;
         ctx.fillText("" + player.score, x, 30);
-        for (let l = 0; l < player.lives - 1; l++) {
+        if (player.lives < 6) {
+            for (let l = 0; l < player.lives - 1; l++) {
+                drawPlayer(fakePlayer);
+                fakePlayer.loc.x += 20;
+            }
+        }
+        else {
             drawPlayer(fakePlayer);
-            fakePlayer.loc.x += 20;
+            ctx.font = "30px pixel";
+            ctx.fillText("" + player.lives, fakePlayer.loc.x + 20, 60);
         }
     }
     ctx.textAlign = "right";
@@ -369,7 +382,7 @@ function drawScores() {
     ctx.fillStyle = "#888888";
     ctx.fillRect(canvas.width - 10 - 200, 60, 200, 4);
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(canvas.width - 10 - 200, 60, 200 * ((totalScore % LIFE_SCORE) / LIFE_SCORE), 4);
+    ctx.fillRect(canvas.width - 10 - 200, 60, 200 * ((totalScore % lifeScore) / lifeScore), 4);
 }
 
 function drawStartPlayers() {
@@ -389,6 +402,7 @@ function joinHandler(e) {
     let p = Player(e.uid);
     players.push(p);
     playermap[e.uid] = p;
+    sendPacket("lock_input", "host", e.uid, "");
 }
 
 function leaveHandler(e) {

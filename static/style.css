@@ -108,6 +108,11 @@ sub {}
 
 }
 
+.confirmbox {
+    color: #FFFFFF;
+    z-index: 11
+}
+
 .foot {
     background-color:#811111;
     position:absolute;

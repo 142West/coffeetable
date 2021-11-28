@@ -151,6 +151,9 @@ async def serve_host_connect(request, socket):
             if packet["destination"] in user_index.keys(): # passthrough to client
                 await send_json(user_index[packet["destination"]], packet)
 
+            elif packet['destination'] == "broadcast":
+                await broadcast(packet["type"], packet["payload"]);
+
             elif packet["destination"] == "server": # host wants something from server
                 pass # TODO HANDLE THE SERVER REQUEST?
     finally:

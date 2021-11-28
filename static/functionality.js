@@ -1,7 +1,8 @@
 const SHADES = [0.85, 1, 0.1, 0.5];
-const DEFAULT_COLOR = "#505050"
+const DEFAULT_COLOR = "#505050";
 
-const VIEWS = ["select", "direction", "proportion", "text"]
+const VIEWS = ["select", "direction", "proportion", "text"];
+const BUTTON_IDS = ["btn-select", "btn-direction", "btn-joystick", "btn-text"];
 
 let COLOR = "#000000";
 let COLOR_COMP = {R: 0, G: 0, B: 0};
@@ -43,7 +44,18 @@ function changeView(view) {
     VIEW = view;
     renderClear();
     renderView(view);
+}
 
+function lockInput() {
+    LOCKED = true;
+}
+
+function unlockInput() { // TODO might crash if render.sel not defined?
+    LOCKED = false;
+    if (render.sel.lockMessage != null) {
+        render.sel.lockMessage.remove();
+        render.sel.lockMessage = null;
+    }
 }
 
 /*----------- SOCKETS -----------*/
@@ -94,6 +106,7 @@ function socketMessage(message) {
             console.log(SELECTED_PAGE);
             render.info.txt = "This page has no hints.";
             clearInfo();
+            unlockInput();
             break;
         case "help_text":
             render.info.txt = m.payload;
@@ -210,6 +223,7 @@ function scaleCanvas() {
 function renderView(view) {
     renderClear();
     render.updateRequired = true;
+    resetButtonIcons();
     switch (view) {
         case "select":
             setupSelect();
@@ -250,6 +264,8 @@ function setupSelect() {
     render.sel.values = [];
     render.sel.trimmed_names = [];
     render.sel.texts = []
+    render.sel.lockMessage = null;
+    render.sel.lockButton = null;
     const max_len = 32;
 
     for (const [key, value] of Object.entries(PAGE_LIST)) {
@@ -258,6 +274,8 @@ function setupSelect() {
         render.sel.trimmed_names.push(key.substr(0, max_len));
         render.sel.texts.push(makeDiv("select_text", key.substr(0, max_len)));
     }
+
+    selectButton("btn-select");
 }
 function renderSelect() {
     // schedule the next frame unless the view has changed
@@ -323,7 +341,7 @@ function renderSelect() {
 // DIRECTION PAGE
 
 function setupDirection() {
-    
+    selectButton("btn-direction");
 }
 function renderDirection() {
     if (VIEW == "direction") {
@@ -370,7 +388,7 @@ function renderDirection() {
 
 // JOYSTICK PAGE
 function setupProportion() {
-
+    selectButton("btn-joystick")
 }
 function renderProportion() {
     if (VIEW == "proportion") {
@@ -425,6 +443,8 @@ function setupText() {
     setPos(render.txt.input, canvas.width/2, canvas.height/4 + 20);
     setPos(render.txt.btn, canvas.width/2, canvas.height/2 + 20);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    selectButton("btn-text");
 }
 function renderText() {
     if (VIEW == "text") {
@@ -492,6 +512,17 @@ function clearInfo() {
     render.info.shown = false;
 }
 
+//BUTTONS
+function resetButtonIcons() {
+    for (let i of BUTTON_IDS) {
+        document.getElementById(i).style.filter = "brightness(1)";
+    }
+}
+
+function selectButton(button_id) {
+    document.getElementById(button_id).style.filter = "brightness(0.75)";
+}
+
 /*------------ DOM ------------*/
 
 function makeDiv(clazz, text) {
@@ -540,6 +571,27 @@ function setPos(obj, x, y) {
 }
 
 /*----------- INTERFACE -----------*/
+
+function selectTapHandler(loc) {
+    if (!LOCKED) {
+        sendPacket("load_page", COLOR, "server", PAGE_LIST[render.sel.selected]);
+    }
+    if (LOCKED) {
+        if (render.sel.lockMessage == null) {
+            render.sel.lockMessage = makeDiv("infobox confirmbox", "CAUTION!\nYou are attempting to navigate away from a page which is still active.\n\nTap this message if you wish to continue.\n");
+            render.sel.lockMessage.style.backgroundColor = theme[2];
+        }
+        else {
+            let r = render.sel.lockMessage.getBoundingClientRect();
+            if (loc.y <= r.bottom && loc.y >= r.top){
+                sendPacket("load_page", COLOR, "server", PAGE_LIST[render.sel.selected]);
+            }
+            render.sel.lockMessage.remove();
+            render.sel.lockMessage = null;
+        }
+    }
+}
+
 
 function translation(loc, delta, dt) {
     switch (VIEW) {
@@ -605,6 +657,12 @@ function touchEnded(id){
                 console.log("end input");
             }
             break;
+        case "proportion":
+            let a = Math.atan2(touch.d.y, touch.d.x);
+            let s = Math.min(touch.d.c / 50, 1); // MAGIC VALUE, see proportion display
+            sendPacket("input_end", COLOR, "host", 
+                {type: "proportion", angle: a, strength: s, id: touch.lid});
+            
     }
 }
 
@@ -612,7 +670,7 @@ function tap(loc) {
     console.log("TAP!");
     switch (VIEW) {
         case "select":
-            sendPacket("load_page", COLOR, "server", PAGE_LIST[render.sel.selected]);
+            selectTapHandler(loc);
             break;
         case "direction":
         case "proportion":
