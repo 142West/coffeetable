@@ -100,6 +100,21 @@ function runGame() {
                 kill = true;
             }
         }
+
+        for (let player of players) {
+            if (vLength2(vSub(player.loc, bullet.loc)) < 1) {
+                 player.lives--;
+                player.respawn = true;
+                Particles(player.loc, player.color);
+                Particles(player.loc, player.color);
+                if (player.lives > 0) {
+                    setTimeout(function() {
+                        playerRespawn(player);
+                    }, 1500);
+                }
+                   
+            }
+        }
         if (bullet.loc.x < 0 || bullet.loc.x > canvas.width || bullet.loc.y < 0 || bullet.loc.y > canvas.height || kill) {
             bullets.splice(i, 1);
         }
