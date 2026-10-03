@@ -39,7 +39,7 @@ Phones connect to `/connect` and get a unique color, the page list, and the curr
 
 - Raspberry Pi 4 or newer recommended (Firefox plus canvas animations are CPU/GPU heavy)
 - Raspberry Pi OS **with Desktop** (not Lite, because a GUI is required for the kiosk browser)
-- **Python 3.11**: the pinned `sanic==21.6.0` stack is tested on 3.11, which is what Raspberry Pi OS Bookworm ships. On a newer OS, see the note in step 3.
+- **Python 3.11** for the app itself. The pinned `sanic==21.6.0` stack won't build on newer Python versions (current Raspberry Pi OS ships 3.13), so step 3 uses [uv](https://docs.astral.sh/uv/) to give the app its own Python 3.11. You don't need to change the system Python.
 
 These instructions assume the default `pi` user and that the repo lives in `/home/pi/coffeetable`. If yours differ, update the path in `coffeetable.desktop`.
 
@@ -98,19 +98,15 @@ git clone https://github.com/142West/coffeetable.git /home/pi/coffeetable
 cd /home/pi/coffeetable
 chmod +x coffeetable.sh
 
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-```
-
-The launcher looks for the virtual environment at `.venv` inside the repo (it's already in `.gitignore`), so the pinned packages stay separate from anything else on the Pi.
-
-**Newer OS (Python 3.12+)?** Older pinned packages like `uvloop==0.19.0` won't build on newer Python versions. Use [uv](https://docs.astral.sh/uv/) to make a 3.11 environment instead:
-
-```bash
+# Install uv, then build a Python 3.11 environment for the app
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ~/.local/bin/uv venv -p 3.11 .venv
 VIRTUAL_ENV=.venv ~/.local/bin/uv pip install -r requirements.txt
 ```
+
+uv downloads a standalone Python 3.11 the first time (it doesn't touch the system's `python3`), and installs the pinned packages into it. One or two older packages are compiled on the Pi, which can take a minute or two. The launcher looks for the environment at `.venv` inside the repo (it's already in `.gitignore`), so the pinned packages stay separate from anything else on the Pi.
+
+Don't use `python3 -m venv` + `pip` here. On Python 3.12+ the pinned `httptools`, `multidict`, and `uvloop` fail to compile with errors like `too few arguments to function '_PyLong_AsByteArray'`. If you already tried that, `rm -rf .venv` and run the uv commands above.
 
 Test it manually before wiring up autostart. Run it from a terminal **on the Pi's desktop** (not over plain SSH, since Firefox needs the display):
 
@@ -196,6 +192,7 @@ The page shown at boot is set by `DEFAULT_PAGE` at the top of `run.py` (default 
 
 ## Troubleshooting
 
+- **`Failed building wheel for httptools` / `multidict` / `uvloop`**: the venv was made with the system Python (3.12+). `rm -rf /home/pi/coffeetable/.venv` and redo the uv commands in section 3.
 - **`Unable to obtain driver for firefox using Selenium Manager`**: geckodriver isn't installed or isn't on `PATH`. Redo the geckodriver step in section 2 and check `which geckodriver`.
 - **`Message: Process unexpectedly closed with status 1`**: Firefox couldn't open a window. Make sure you're running from the desktop session (autostart or a desktop terminal), not a bare SSH shell.
 - **Phones can't load the page**: check the Pi's IP with `hostname -I`, confirm the server is up with `curl http://localhost:8081/` on the Pi, and make sure the phone is on the same network (not a guest WiFi that isolates clients).
