@@ -14,7 +14,8 @@ xset s off      2>/dev/null
 xset s noblank  2>/dev/null
 xset -dpms      2>/dev/null
 
-# Hide the mouse cursor when idle, if installed
+# Hide the mouse cursor when idle, if installed (X11 only -- under Wayland/labwc
+# use hide-cursor.sh instead, since unclutter can't see the cursor there)
 command -v unclutter >/dev/null && unclutter -idle 0.5 -root &
 
 cd "$DIR" || exit 1

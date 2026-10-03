@@ -71,12 +71,10 @@ Display Options -> Screen Blanking -> No
 
 ```bash
 sudo apt update
-sudo apt install python3-full firefox unclutter curl git -y
+sudo apt install python3-full firefox curl git -y
 ```
 
 If `firefox` isn't found on your OS version, install `firefox-esr` instead.
-
-`unclutter` hides the mouse cursor when idle. It's optional, but it keeps a stray cursor off the table.
 
 Selenium also needs **geckodriver**, the bridge between Selenium and Firefox. Selenium can't download it automatically on ARM Linux, so install it by hand from [Mozilla's releases](https://github.com/mozilla/geckodriver/releases):
 
@@ -135,7 +133,21 @@ This uses the standard XDG autostart mechanism, which Raspberry Pi OS's desktop 
 
 ---
 
-## 5. Reboot and Verify
+## 5. Hide the Mouse Cursor
+
+Wayland always shows the cursor, even with no mouse moving, so it would sit on top of the games. `hide-cursor.sh` installs a fully transparent cursor theme and makes it the desktop's cursor, both for labwc and for GTK apps like Firefox. Run it once as `pi` (not with sudo):
+
+```bash
+/home/pi/coffeetable/hide-cursor.sh
+```
+
+It takes effect after the reboot in the next step. To get the normal cursor back (e.g. for debugging with a mouse), run `/home/pi/coffeetable/hide-cursor.sh --undo` and reboot.
+
+The usual X11 tool for this, `unclutter`, does nothing under Wayland. The launcher still runs it if it's installed, so the cursor also hides on a Pi switched to X11 in `raspi-config`.
+
+---
+
+## 6. Reboot and Verify
 
 ```bash
 sudo reboot
@@ -198,4 +210,5 @@ The page shown at boot is set by `DEFAULT_PAGE` at the top of `run.py` (default 
 - **Phones can't load the page**: check the Pi's IP with `hostname -I`, confirm the server is up with `curl http://localhost:8081/` on the Pi, and make sure the phone is on the same network (not a guest WiFi that isolates clients).
 - **Phones connect but nothing happens on the table**: the page on the table talks to the server at `ws://localhost:8081/hostconnect`. Check the log for `HOST CONNECTION FAILED`.
 - **A page in the list shows "File not found"**: its `pages/data/<dir>` folder is missing. `wikitrivia` currently has a YAML file but no data folder.
+- **Cursor still visible after running `hide-cursor.sh`**: make sure you rebooted, and that you ran it as `pi` rather than with sudo. Check that `grep XCURSOR /home/pi/.config/labwc/environment` shows `XCURSOR_THEME=coffeetable-invisible` and `gsettings get org.gnome.desktop.interface cursor-theme` shows `'coffeetable-invisible'`.
 - **Need to get to the desktop for debugging**: SSH in and stop it (see Managing It above), or press Alt+F4 on a keyboard plugged into the Pi.
