@@ -1,4 +1,4 @@
-import os, yaml, time, asyncio
+import os, sys, shutil, yaml, time, asyncio
 
 import server
 
@@ -9,11 +9,15 @@ BASE_URL = 'file://' + PATH + 'pages/data/'
 def firefox():
     print("Starting Selenium...")
     try:
-        from selenium.webdriver import Firefox
+        from selenium.webdriver import Firefox, FirefoxOptions
+        from selenium.webdriver.firefox.service import Service
     except:
         print("Display requires the `selenium` package, which is not present")
-        os.exit(0)
-    return Firefox()
+        sys.exit(1)
+    options = FirefoxOptions()
+    options.add_argument("--kiosk")
+    # Prefer a geckodriver on PATH -- Selenium Manager can't fetch one for ARM Linux (Raspberry Pi)
+    return Firefox(options=options, service=Service(executable_path=shutil.which("geckodriver")))
 
 def load_conf(yamlstream):
     with open(PATH + "defaults.yaml", 'r') as f:

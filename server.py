@@ -168,8 +168,8 @@ async def start_runner(app, loop):
 def init():
     app = Sanic.get_app("CoffeetableApp")
 
-    app.static("/","static")
-    app.static("", "static/index.html")
+    app.static("/", run.PATH + "static")
+    app.static("", run.PATH + "static/index.html")
 
     app.add_websocket_route(serve_connect, "/connect")
     app.add_websocket_route(serve_host_connect, "/hostconnect")

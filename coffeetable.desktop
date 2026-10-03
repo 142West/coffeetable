@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Coffeetable
+Exec=/home/pi/coffeetable/coffeetable.sh
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
